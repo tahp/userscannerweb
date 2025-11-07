@@ -1,4 +1,3 @@
 {
-  "framework": "create-react-app",
-  "root": "web/frontend"
+  "framework": "create-react-app"
 }
