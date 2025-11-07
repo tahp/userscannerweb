@@ -1,2 +1,4 @@
 fastapi
 uvicorn
+user_scanner
+python-multipart
