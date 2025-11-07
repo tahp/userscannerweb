@@ -1,6 +1,26 @@
 {
-  "framework": "create-react-app",
+  "version": 2,
+  "builds": [
+    {
+      "src": "web/backend/main.py",
+      "use": "@vercel/python"
+    },
+    {
+      "src": "web/frontend/package.json",
+      "use": "@vercel/static-build",
+      "config": {
+        "distDir": "build"
+      }
+    }
+  ],
   "rewrites": [
-    { "source": "/(.*)", "destination": "/index.html" }
+    {
+      "source": "/api/(.*)",
+      "destination": "/web/backend/main.py"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/web/frontend/build/$1"
+    }
   ]
 }
