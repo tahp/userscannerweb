@@ -44,3 +44,13 @@ body {
   background-color: #ffab00 !important;
   color: #121212 !important;
 }
+
+a {
+  text-decoration: none; /* Remove underline */
+  font-family: "Arial Black", Gadget, sans-serif; /* Set font to Arial Black */
+  color: #ccc; /* Default link color */
+}
+
+a:hover {
+  color: #666; /* Hover color */
+}
