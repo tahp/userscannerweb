@@ -9,7 +9,7 @@
     },
     {
       "source": "/(.*)",
-      "destination": "/web/frontend/build/$1"
+      "destination": "/build/$1"
     }
   ],
   "builds": [
