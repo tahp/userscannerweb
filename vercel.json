@@ -19,7 +19,7 @@
     },
     {
       "source": "/(.*)",
-      "destination": "/web/frontend/build/$1"
+      "destination": "/$1"
     }
   ]
 }
