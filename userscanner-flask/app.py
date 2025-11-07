@@ -1,6 +1,8 @@
 from flask import Flask, render_template, request, jsonify
 import importlib
 import pkgutil
+from concurrent.futures import ThreadPoolExecutor
+
 from user_scanner import dev, social, creator, community, gaming
 
 app = Flask(__name__)
@@ -48,6 +50,33 @@ def get_site_url(site_name, username):
 def index():
     return render_template("index.html")
 
+def _scan_site(module, username, get_site_url_func):
+    func = next((getattr(module, f) for f in dir(module) if f.startswith("validate_") and callable(getattr(module, f))), None)
+    if not func:
+        return None
+
+    site_name = module.__name__.split('.')[-1].capitalize()
+    
+    try:
+        result = func(username)
+        status = "Error"
+        if result == 1:
+            status = "Available"
+        elif result == 0:
+            status = "Taken"
+        
+        return {
+            "site": site_name,
+            "status": status,
+            "url": get_site_url_func(site_name, username)
+        }
+    except Exception as e:
+        return {
+            "site": site_name,
+            "status": "Error",
+            "url": get_site_url_func(site_name, username)
+        }
+
 @app.route("/scan", methods=["POST"])
 def scan_username():
     username = request.json.get("username")
@@ -63,40 +92,24 @@ def scan_username():
         ("GAMING", gaming)
     ]
 
-    for cat_name, package in categories:
-        category_results = []
-        try:
-            modules = load_modules(package)
-        except ModuleNotFoundError:
-            continue
-
-        for module in modules:
-            func = next((getattr(module, f) for f in dir(module) if f.startswith("validate_") and callable(getattr(module, f))), None)
-            if not func:
+    with ThreadPoolExecutor(max_workers=10) as executor:
+        futures = []
+        for cat_name, package in categories:
+            try:
+                modules = load_modules(package)
+            except ModuleNotFoundError:
                 continue
 
-            site_name = module.__name__.split('.')[-1].capitalize()
-            
-            try:
-                result = func(username)
-                status = "Error"
-                if result == 1:
-                    status = "Available"
-                elif result == 0:
-                    status = "Taken"
-                
-                category_results.append({
-                    "site": site_name,
-                    "status": status,
-                    "url": get_site_url(site_name, username)
-                })
-            except Exception as e:
-                category_results.append({
-                    "site": site_name,
-                    "status": "Error",
-                    "url": get_site_url(site_name, username)
-                })
-        results[cat_name] = category_results
+            for module in modules:
+                futures.append(executor.submit(_scan_site, module, username, get_site_url))
+        
+        for future in futures:
+            site_result = future.result()
+            if site_result:
+                category = next((cat for cat, pkg in categories if pkg.__name__ in site_result['site'].lower()), "UNKNOWN")
+                if category not in results:
+                    results[category] = []
+                results[category].append(site_result)
 
     return jsonify(results)
 
