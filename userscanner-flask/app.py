@@ -1,7 +1,7 @@
 from flask import Flask, render_template, request, jsonify
 import importlib
 import pkgutil
-from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 from user_scanner import dev, social, creator, community, gaming
 
@@ -50,10 +50,10 @@ def get_site_url(site_name, username):
 def index():
     return render_template("index.html")
 
-def _scan_site(module, username, get_site_url_func):
+def _scan_site(module, username, get_site_url_func, cat_name):
     func = next((getattr(module, f) for f in dir(module) if f.startswith("validate_") and callable(getattr(module, f))), None)
     if not func:
-        return None
+        return cat_name, None
 
     site_name = module.__name__.split('.')[-1].capitalize()
     
@@ -65,13 +65,13 @@ def _scan_site(module, username, get_site_url_func):
         elif result == 0:
             status = "Taken"
         
-        return {
+        return cat_name, {
             "site": site_name,
             "status": status,
             "url": get_site_url_func(site_name, username)
         }
     except Exception as e:
-        return {
+        return cat_name, {
             "site": site_name,
             "status": "Error",
             "url": get_site_url_func(site_name, username)
@@ -101,15 +101,14 @@ def scan_username():
                 continue
 
             for module in modules:
-                futures.append(executor.submit(_scan_site, module, username, get_site_url))
+                futures.append(executor.submit(_scan_site, module, username, get_site_url, cat_name))
         
-        for future in futures:
-            site_result = future.result()
+        for future in as_completed(futures):
+            cat_name, site_result = future.result()
             if site_result:
-                category = next((cat for cat, pkg in categories if pkg.__name__ in site_result['site'].lower()), "UNKNOWN")
-                if category not in results:
-                    results[category] = []
-                results[category].append(site_result)
+                if cat_name not in results:
+                    results[cat_name] = []
+                results[cat_name].append(site_result)
 
     return jsonify(results)
 
