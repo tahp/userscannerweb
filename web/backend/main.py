@@ -1,0 +1,94 @@
+from fastapi import FastAPI
+import importlib
+import pkgutil
+from user_scanner import dev, social, creator, community, gaming
+
+app = FastAPI()
+
+def load_modules(package):
+    modules = []
+    for _, name, _ in pkgutil.iter_modules(package.__path__, package.__name__ + "."):
+        try:
+            module = importlib.import_module(name)
+            modules.append(module)
+        except Exception as e:
+            print(f"Failed to import {name}: {e}")
+    return modules
+
+def get_site_url(site_name, username):
+    urls = {
+        "Github": f"https://github.com/{username}",
+        "Gitlab": f"https://gitlab.com/{username}",
+        "Codeberg": f"https://codeberg.org/{username}",
+        "Cratesio": f"https://crates.io/users/{username}",
+        "Dockerhub": f"https://hub.docker.com/u/{username}",
+        "Launchpad": f"https://launchpad.net/~{username}",
+        "Npmjs": f"https://www.npmjs.com/~{username}",
+        "Replit": f"https://replit.com/@{username}",
+        "Bluesky": f"https://bsky.app/profile/{username}",
+        "Instagram": f"https://www.instagram.com/{username}",
+        "Mastodon": f"https://mastodon.social/@{username}",
+        "Pinterest": f"https://www.pinterest.com/{username}",
+        "Reddit": f"https://www.reddit.com/user/{username}",
+        "Snapchat": f"https://www.snapchat.com/add/{username}",
+        "Threads": f"https://www.threads.net/@{username}",
+        "X": f"https://x.com/{username}",
+        "Youtube": f"https://www.youtube.com/@{username}",
+        "Devto": f"https://dev.to/{username}",
+        "Hashnode": f"https://hashnode.com/@{username}",
+        "Kaggle": f"https://www.kaggle.com/{username}",
+        "Medium": f"https://medium.com/@{username}",
+        "Patreon": f"https://www.patreon.com/user?u={username}",
+        "Coderlegion": f"https://www.coderlegion.com/users/{username}",
+        "Chess_com": f"https://www.chess.com/member/{username}",
+    }
+    return urls.get(site_name, "#")
+
+
+@app.get("/scan/{username}")
+def scan_username(username: str):
+    results = {}
+    categories = [
+        ("DEV", dev),
+        ("SOCIAL", social),
+        ("CREATOR", creator),
+        ("COMMUNITY", community),
+        ("GAMING", gaming)
+    ]
+
+    for cat_name, package in categories:
+        category_results = []
+        try:
+            modules = load_modules(package)
+        except ModuleNotFoundError:
+            continue
+
+        for module in modules:
+            func = next((getattr(module, f) for f in dir(module) if f.startswith("validate_") and callable(getattr(module, f))), None)
+            if not func:
+                continue
+
+            site_name = module.__name__.split('.')[-1].capitalize()
+            
+            try:
+                result = func(username)
+                status = "Error"
+                if result == 1:
+                    status = "Available"
+                elif result == 0:
+                    status = "Taken"
+                
+                category_results.append({
+                    "site": site_name,
+                    "status": status,
+                    "url": get_site_url(site_name, username)
+                })
+            except Exception as e:
+                category_results.append({
+                    "site": site_name,
+                    "status": "Error",
+                    "url": get_site_url(site_name, username)
+                })
+        results[cat_name] = category_results
+
+    return results
