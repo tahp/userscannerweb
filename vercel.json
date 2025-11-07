@@ -1,17 +1,12 @@
 {
-  "functions": {
-    "web/backend/api/**/*.py": {
-      "runtime": "vercel-python@3.1.7"
-    }
-},
   "rewrites": [
     {
       "source": "/api/(.*)",
-      "destination": "/web/backend/api/"
+      "destination": "/api/$1"
     },
     {
       "source": "/(.*)",
-      "destination": "/web/frontend/"
+      "destination": "/web/frontend/$1"
     }
   ]
 }
