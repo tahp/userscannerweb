@@ -1,4 +1,7 @@
 {
+  "env": {
+    "PYTHONPATH": "."
+  },
   "rewrites": [
     {
       "source": "/api/(.*)",
@@ -12,10 +15,7 @@
   "builds": [
     {
       "src": "web/backend/main.py",
-      "use": "@vercel/python",
-      "env": {
-        "PYTHONPATH": "."
-      }
+      "use": "@vercel/python"
     },
     {
       "src": "web/frontend/package.json",
