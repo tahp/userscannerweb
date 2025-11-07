@@ -9,7 +9,7 @@
       "src": "web/frontend/package.json",
       "use": "@vercel/static-build",
       "config": {
-        "distDir": "build"
+        "distDir": "public"
       }
     }
   ],
@@ -20,7 +20,7 @@
     },
     {
       "source": "/(.*)",
-      "destination": "/web/frontend/build/$1"
+      "destination": "/public/$1"
     }
   ]
 }
