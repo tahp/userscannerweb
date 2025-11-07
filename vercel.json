@@ -1,26 +1,4 @@
 {
-  "env": {
-    "PYTHONPATH": "."
-  },
-  "rewrites": [
-    {
-      "source": "/api/(.*)",
-      "destination": "/web/backend/main.py"
-    },
-    {
-      "source": "/(.*)",
-      "destination": "/build/$1"
-    }
-  ],
-  "builds": [
-    {
-      "src": "web/backend/main.py",
-      "use": "@vercel/python"
-    },
-    {
-      "src": "web/frontend/package.json",
-      "use": "@vercel/static-build",
-      "config": { "distDir": "build", "buildCommand": "npm run build" }
-    }
-  ]
+  "framework": "create-react-app",
+  "root": "web/frontend"
 }
